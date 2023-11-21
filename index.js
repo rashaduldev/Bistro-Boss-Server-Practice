@@ -40,6 +40,14 @@ async function run() {
         const result=await reviewcollection.find().toArray();
         res.send(result)
     })
+    // ----------------------------------------------------------------
+    // post cart data read
+    app.get('/carts',async(req,res) => {
+        const email=req.query.email;
+        const query={email: email}
+        const result=await cartcollection.find(query).toArray();
+        res.send(result)
+    })
     // post cart data
     app.post('/carts',async(req,res) => {
         const cartItem=req.body;
