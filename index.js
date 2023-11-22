@@ -52,20 +52,31 @@ async function run() {
         const result=await usercollection.insertOne(user);
         res.send(result)
     })
+    // get user to Display
     app.get('/users',async(req,res)=>{
       const result=await usercollection.find().toArray();
       res.send(result);
     })
-    // app.get('/users',async(req,res) => {
-    //     const result=await usercollection.find().toArray();
-    //     res.send(result)
-    // })
-    // app.delete('/users/:id',async(req,res) => {
-    //     const id=req.params.id;
-    //     const query={_id: new ObjectId(id)}
-    //     const result=await usercollection.deleteOne(query);
-    //     res.send(result)
-    // })
+    // Delete user to Display
+    app.delete('/users/:id',async(req,res)=>{
+      const id=req.params.id;
+      const query={_id: new ObjectId(id)};
+      const result=await usercollection.deleteOne(query);
+      res.send(result);
+    })
+    // Update user admin role
+    app.patch('users/admin/:id',async(req,res)=>{
+      const id=req.params.id;
+      const filter={_id: new ObjectId(id)}
+      const updateDoc={
+        $set:{
+          role:'admin'
+        }
+      }
+      const result=await usercollection.updateOne(filter,updateDoc);
+      res.send(result);
+    })
+
     // ----------------------------------------------------------------
     // post menu data read
 
