@@ -42,6 +42,15 @@ async function run() {
         const result=await reviewcollection.find().toArray();
         res.send(result)
     })
+    // JWt Related API
+    app.post('/jwt',async(req,res)=>{
+      const user=req.body;
+      const token=jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{
+        expiresIn:'1h'
+      });
+      res.send({token})
+    })
+
     // Users related api
     app.post('/users',async(req,res) => {
         const user=req.body;
@@ -55,6 +64,7 @@ async function run() {
     })
     // get user to Display
     app.get('/users',async(req,res)=>{
+      console.log(req.headers);
       const result=await usercollection.find().toArray();
       res.send(result);
     })
