@@ -52,6 +52,10 @@ async function run() {
         const result=await usercollection.insertOne(user);
         res.send(result)
     })
+    app.get('/users',async(req,res)=>{
+      const result=await usercollection.find().toArray();
+      res.send(result);
+    })
     // app.get('/users',async(req,res) => {
     //     const result=await usercollection.find().toArray();
     //     res.send(result)
