@@ -42,6 +42,7 @@ async function run() {
         const result=await reviewcollection.find().toArray();
         res.send(result)
     })
+    // ---------------------JWT------------------
     // JWt Related API
     app.post('/jwt',async(req,res)=>{
       const user=req.body;
@@ -50,7 +51,18 @@ async function run() {
       });
       res.send({token})
     })
+    // Verified token middleware
+    const tokenMiddleware=(req,res,next) =>{
+      console.log('Inside token middleware',req.headers);
+      if (!req.headers.authorization) {
+        return res.status(401).send({message: 'forbidden Access Denied'});
+      }
+      const token=req.headers.authorization.split(' ')[1];
+      // next();
+    }
+// 68.8
 
+// ----------------------------------------------------------------
     // Users related api
     app.post('/users',async(req,res) => {
         const user=req.body;
@@ -63,7 +75,7 @@ async function run() {
         res.send(result)
     })
     // get user to Display
-    app.get('/users',async(req,res)=>{
+    app.get('/users',tokenMiddleware, async(req,res)=>{
       console.log(req.headers);
       const result=await usercollection.find().toArray();
       res.send(result);
