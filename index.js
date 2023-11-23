@@ -53,13 +53,35 @@ async function run() {
     })
     // Verified token middleware
     const tokenMiddleware=(req,res,next) =>{
-      console.log('Inside token middleware',req.headers);
+      console.log('Inside token middleware',req.headers.authorization);
       if (!req.headers.authorization) {
-        return res.status(401).send({message: 'forbidden Access Denied'});
+        return res.status(401).send({message: 'Unauthorized access'});
       }
       const token=req.headers.authorization.split(' ')[1];
+      jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
+        if (err) {
+          return res.status(401).send({message: 'Unauthorized access'});
+        }
+        req.decoded=decoded;
+        next();
+      })
       // next();
     }
+
+    app.get('/users/admin/:email',tokenMiddleware,async(req,res)=>{
+      const email=req.params.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send({message: 'Unauthorized access'});
+      }
+      const query={email:email}
+
+      const user=await usercollection.findOne(query);
+      let admin=false;
+      if (user?.role === 'admin') {
+        admin=true;
+      }
+      res.send({admin});
+    })
 // 68.8
 
 // ----------------------------------------------------------------
