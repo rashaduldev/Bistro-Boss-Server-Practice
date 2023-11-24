@@ -33,6 +33,7 @@ async function run() {
     const menucollection = client.db("userstDB").collection("menus");
     const reviewcollection = client.db("userstDB").collection("reviews");
     const cartcollection = client.db("userstDB").collection("carts");
+    const paymentcollection = client.db("userstDB").collection("payments");
 
     app.get('/menus',async(req,res) => {
         const result=await menucollection.find().toArray();
@@ -191,6 +192,26 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret
       });
+    })
+
+    app.get('/payments/:email', verifyToken,async(req,res) => {
+      const query={email: req.params.email}
+      if (req.params.email !== req.decoded.email) {  
+        return res.status(403).send({message:'Forbidden access denied'})
+      }
+      const result=await paymentcollection.find(query).toArray();
+      res.send(result)
+    })
+    app.post('/payments',async(req,res) => {
+      const payment=req.body;
+      const paymentResult = await paymentcollection.insertOne(payment);
+      const query = {
+        _id: {
+          $in: payment.cartIds.map(id => new ObjectId(id))
+        }
+      };
+      const deleteResult = await cartcollection.deleteMany(query);
+      res.send({ paymentResult, deleteResult });
     })
 
     // Send a ping to confirm a successful connection
