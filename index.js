@@ -3,6 +3,7 @@ const express = require('express')
 const cors = require('cors')
 var jwt = require('jsonwebtoken')
 require('dotenv').config()
+const stripe=require('stripe')(process.env.STRIPE_SECRET_KEY)
 const app = express()
 const port=process.env.PORT || 3000
 
@@ -51,8 +52,20 @@ async function run() {
       });
       res.send({token})
     })
+    // use varify admin after access token
+    const verifyadmin=async(req, res,next)=>{
+      const email=req.decoded.email;
+      const query={email:email}
+      const user=await usercollection.findOne(query);
+      const isAdmin=user?.role==='admin';
+      if (!isAdmin) {
+        return res.status(404).send({message:'Forbidden access denied'})
+      }
+      next();
+    }
+
     // Verified token middleware
-    const tokenMiddleware=(req,res,next) =>{
+    const verifyToken=(req,res,next) =>{
       console.log('Inside token middleware',req.headers.authorization);
       if (!req.headers.authorization) {
         return res.status(401).send({message: 'Unauthorized access'});
@@ -68,7 +81,7 @@ async function run() {
       // next();
     }
 
-    app.get('/users/admin/:email',tokenMiddleware,async(req,res)=>{
+    app.get('/users/admin/:email',verifyToken,async(req,res)=>{
       const email=req.params.email;
       if (email !== req.decoded.email) {
         return res.status(403).send({message: 'Unauthorized access'});
@@ -82,6 +95,8 @@ async function run() {
       }
       res.send({admin});
     })
+
+
 // 68.8
 
 // ----------------------------------------------------------------
@@ -97,20 +112,20 @@ async function run() {
         res.send(result)
     })
     // get user to Display
-    app.get('/users',tokenMiddleware, async(req,res)=>{
+    app.get('/users',verifyToken,verifyadmin, async(req,res)=>{
       console.log(req.headers);
       const result=await usercollection.find().toArray();
       res.send(result);
     })
     // Delete user to Display
-    app.delete('/users/:id',async(req,res)=>{
+    app.delete('/users/:id',verifyToken,verifyadmin, async(req,res)=>{
       const id=req.params.id;
       const query={_id: new ObjectId(id)};
       const result=await usercollection.deleteOne(query);
       res.send(result);
     })
     // Update user admin role
-    app.patch('/users/admin/:id',async(req,res)=>{
+    app.patch('/users/admin/:id',verifyToken,verifyadmin, async(req,res)=>{
       const id=req.params.id;
       const filter={_id: new ObjectId(id)};
       const updateDoc={
@@ -162,6 +177,21 @@ async function run() {
         res.send(result)
     })
     // delete review item
+
+    // payment intent
+    app.post('/payment-intent',async(req,res) => {
+      const {price}=req.body;
+      const amount=parseInt(price*100);
+      console.log(amount,'amount inside the intent');
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types:['card']
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      });
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
